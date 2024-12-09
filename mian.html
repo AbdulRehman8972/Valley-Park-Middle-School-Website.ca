@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valley Park Middle School</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav aria-label="Main Navigation">
+        <ul class="navbar">
+            <li><a href="#welcome">Welcome</a></li>
+            <li><a href="#events">Events</a></li>
+            <li><a href="#calendar">Calendar</a></li>
+            <li><a href="#news">News</a></li>
+        </ul>
+    </nav>
+
+    <!-- Header -->
+    <header class="header">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQld51Hfv97LVy1UhLsIjBPnL1xxfptVCgNlA&s" 
+             alt="Valley Park Middle School Logo" class="school-logo">
+        <h1>Valley Park Middle School</h1>
+    </header>
+
+    <!-- Welcome Section -->
+    <section id="welcome" class="section">
+        <h2>Welcome to Our School Website</h2>
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSX9BKsQZl8B1_oDUMQrHnLJzMIB7MjSQTVQ&s" 
+             alt="Welcome Image" class="section-image">
+    </section>
+
+    <!-- Events Section -->
+    <section id="events" class="section">
+        <div class="content">
+            <h2>Events</h2>
+            <div id="events-list" class="item-list"></div>
+            <button class="edit-btn" onclick="editSection('events')">Edit Events</button>
+        </div>
+    </section>
+
+    <!-- News Section -->
+    <section id="news" class="section">
+        <div class="content">
+            <h2>News</h2>
+            <div id="news-list" class="item-list"></div>
+            <button class="edit-btn" onclick="editSection('news')">Edit News</button>
+        </div>
+    </section>
+
+    <!-- Calendar Section -->
+    <div class="calendar-container">
+        <h1>Task Calendar</h1>
+        <div id="calendar" class="calendar"></div>
+        <div id="taskModal" class="task-modal">
+            <textarea id="taskInput" placeholder="Enter task..."></textarea>
+            <button onclick="saveTask()">Save Task</button>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+
+    <footer>
+        <img id="img" src="https://upload.wikimedia.org/wikipedia/en/thumb/6/60/Toronto_District_School_Board_Logo.svg/1200px-Toronto_District_School_Board_Logo.svg.png" alt="">
+        <p>&copy Rights to Valley Park and TDSB</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        const events = JSON.parse(localStorage.getItem('events')) || [];
+        const news = JSON.parse(localStorage.getItem('news')) || [];
+        const passcode = "580902";
+        const calendarDays = document.getElementById('calendar-days');
+        const monthYear = document.getElementById('month-year');
+        const modal = document.getElementById('modal');
+        const submitButton = document.getElementById('submit-passcode');
+        const passcodeInput = document.getElementById('passcode');
+        const errorMessage = document.getElementById('error-message');
+        let selectedDay = null;
+
+        const currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+
+        // Display items (Events and News)
+        function displayItems(section, items) {
+            const container = document.getElementById(`${section}-list`);
+            container.innerHTML = '';
+            items.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="list-item">
+                        <span>${index + 1}. ${item}</span>
+                        <button class="delete-btn" onclick="confirmDelete('${section}', ${index})">Delete</button>
+                    </div>
+                `;
+            });
+        }
+
+        // Confirm Delete
+        function confirmDelete(section, index) {
+            const password = prompt('Enter the password to delete this item:');
+            if (password === '580902') {
+                deleteItem(section, index);
+            } else {
+                alert('Incorrect password! Item not deleted.');
+            }
+        }
+
+        // Delete Item
+        function deleteItem(section, index) {
+            if (section === 'events') {
+                events.splice(index, 1);
+                localStorage.setItem('events', JSON.stringify(events));
+                displayItems('events', events);
+            } else {
+                news.splice(index, 1);
+                localStorage.setItem('news', JSON.stringify(news));
+                displayItems('news', news);
+            }
+            alert('Item deleted successfully!');
+        }
+
+        // Edit Section
+        function editSection(section) {
+            const password = prompt('Enter the password to edit:');
+            if (password === '580902') {
+                const newItem = prompt(`Add a new ${section === 'events' ? 'event' : 'news'}:`);
+                if (newItem) {
+                    if (section === 'events') {
+                        events.push(newItem);
+                        localStorage.setItem('events', JSON.stringify(events));
+                    } else {
+                        news.push(newItem);
+                        localStorage.setItem('news', JSON.stringify(news));
+                    }
+                    displayItems(section, section === 'events' ? events : news);
+                }
+            } else {
+                alert('Incorrect password! Edit canceled.');
+            }
+        }
+
+        // Calendar generation
+        function generateCalendar() {
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const totalDays = lastDay.getDate();
+            const firstDayOfWeek = firstDay.getDay();
+
+            calendarDays.innerHTML = '';
+            monthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+
+            // Empty cells before the first day
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                calendarDays.appendChild(emptyCell);
+            }
+
+            // Create day cells
+            for (let day = 1; day <= totalDays; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.textContent = day;
+                dayCell.addEventListener('click', () => {
+                    selectedDay = day;
+                    openModal();
+                });
+                calendarDays.appendChild(dayCell);
+            }
+        }
+
+        // Modal and Passcode logic
+        function openModal() {
+            modal.style.display = 'flex';
+        }
+
+        submitButton.addEventListener('click', () => {
+            if (passcodeInput.value === passcode) {
+                errorMessage.textContent = '';
+                // Allow editing and adding tasks here
+                const task = prompt(`Enter task for day ${selectedDay}:`);
+                if (task) {
+                    alert(`Task added for ${selectedDay}: ${task}`);
+                }
+                modal.style.display = 'none';
+            } else {
+                errorMessage.textContent = 'Incorrect passcode. Please try again.';
+            }
+        });
+
+        // Initial Display
+        displayItems('events', events);
+        displayItems('news', news);
+        generateCalendar();
+    </script>
+        <script src="script.js"></script>
+
+</body>
+</html>
